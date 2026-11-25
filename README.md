@@ -5,10 +5,13 @@ AI-powered support ticketing system. See [project-scope.md](project-scope.md), [
 
 ## Requirements
 - [Bun](https://bun.sh) 1.4+
+- PostgreSQL running locally
 
 ## Getting started
 ```sh
-bun install
+cp server/.env.example server/.env   # then set DATABASE_URL
+bun install                            # also generates the Prisma Client
+(cd server && bun run db:deploy)       # creates the database and applies migrations
 bun run dev
 ```
 - Client (Vite + React): http://localhost:5173

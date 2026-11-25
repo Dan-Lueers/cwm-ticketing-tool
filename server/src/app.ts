@@ -1,12 +1,23 @@
 import express, { type ErrorRequestHandler } from 'express'
 
-export function createApp() {
+export type AppDependencies = {
+  /** Resolves if the database is reachable, rejects otherwise. */
+  checkDatabase: () => Promise<void>
+}
+
+export function createApp({ checkDatabase }: AppDependencies) {
   const app = express()
 
   app.use(express.json())
 
-  app.get('/api/health', (_req, res) => {
-    res.json({ status: 'ok' })
+  app.get('/api/health', async (_req, res) => {
+    try {
+      await checkDatabase()
+      res.json({ status: 'ok', database: 'ok' })
+    } catch (err) {
+      console.error('Database health check failed:', err)
+      res.status(503).json({ status: 'error', database: 'unreachable' })
+    }
   })
 
   // Unknown API routes return JSON instead of Express's default HTML page.

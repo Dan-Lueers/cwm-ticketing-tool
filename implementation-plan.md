@@ -16,20 +16,21 @@ endpoint simulates incoming emails and outgoing emails are logged, so the whole 
 ---
 
 ## Phase 0 — Project setup
-- [ ] 0.1 Create the folder layout: `/client`, `/server`, root `package.json` with npm workspaces
-- [ ] 0.2 Server: Express + TypeScript, `tsx` for dev, `GET /api/health` endpoint
-- [ ] 0.3 Client: Vite + React + TypeScript
-- [ ] 0.4 Vite dev proxy from `/api` to the Express server
-- [ ] 0.5 ESLint + Prettier for both packages
-- [ ] 0.6 `docker-compose.yml` with PostgreSQL for local development
+- [x] 0.1 Create the folder layout: `/client`, `/server`, root `package.json` with Bun workspaces
+- [x] 0.2 Server: Express + TypeScript, `bun --watch` for dev, `GET /api/health` endpoint
+- [x] 0.3 Client: Vite + React + TypeScript
+- [x] 0.4 Vite dev proxy from `/api` to the Express server
+- [ ] 0.5 ESLint + Prettier for both packages (client has oxlint from the Vite template; server has no linter yet)
+- [ ] 0.6 `docker-compose.yml` with PostgreSQL for local development (currently using local Homebrew PostgreSQL)
 - [ ] 0.7 Environment config: `.env.example`, validated on startup with Zod (the server refuses to start on missing vars)
-- [ ] 0.8 Vitest set up in the server, one passing test for `/api/health` (supertest)
-- [ ] 0.9 Root scripts: `dev` (client + server together), `build`, `test`, `lint`
+      (`server/.env.example` exists; Zod validation not done yet)
+- [x] 0.8 `bun test` set up in the server, passing tests for `/api/health`
+- [x] 0.9 Root scripts: `dev` (client + server together), `build`, `test`, `lint`
 
-**Done when:** `npm run dev` shows the React page, which calls `/api/health` successfully.
+**Done when:** `bun run dev` shows the React page, which calls `/api/health` successfully. ✅
 
 ## Phase 1 — Database and migrations
-- [ ] 1.1 Add Prisma, point it at the local PostgreSQL
+- [x] 1.1 Add Prisma, point it at the local PostgreSQL
 - [ ] 1.2 First migration: `users` table (id, email, name, password hash, role `admin`/`agent`, active, timestamps)
 - [ ] 1.3 Migration: `session` table for the session store (using the store's documented SQL)
 - [ ] 1.4 `migrate` script runs `prisma migrate deploy`; the server's start script runs it before listening

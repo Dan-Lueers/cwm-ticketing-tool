@@ -1,0 +1,11 @@
+// Every schema change goes through a migration: `bun run db:migrate --name <change>`.
+// Never use `prisma db push` and never edit a migration that has already been applied.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
