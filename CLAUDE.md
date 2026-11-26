@@ -23,6 +23,7 @@ TypeScript 7), so training data is often out of date.
 | Express 5 | `/expressjs/express/v5.3.0` |
 | Vite | `/vitejs/vite` |
 | Prisma ORM 7 | `/prisma/orm/7.10.1` (guides: `/prisma/web`) |
+| Better Auth 1.7 | `/better-auth/better-auth/v1.7.15` |
 
 Add libraries to this table as they're introduced (React Router, Tailwind, pg-boss, Anthropic SDK, ...).
 
@@ -47,6 +48,7 @@ Database commands (run from `server/`):
 | `bun run db:migrate --name <change>` | Create and apply a new migration in development |
 | `bun run db:deploy` | Apply pending migrations (deploys, CI) |
 | `bun run db:status` | Show migration status |
+| `bun run db:seed` | Create the user from `ADMIN_EMAIL` / `ADMIN_PASSWORD` if missing (idempotent) |
 | `bun run db:generate` | Regenerate the Prisma Client (after every schema change; `migrate dev` doesn't) |
 | `bun run db:studio` | Open Prisma Studio |
 

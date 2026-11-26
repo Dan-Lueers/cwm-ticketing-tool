@@ -11,7 +11,7 @@ See [project-scope.md](project-scope.md) for what the system does.
 | Frontend | React + TypeScript + Tailwind CSS + React Router (built with Vite) |
 | Database | PostgreSQL |
 | ORM + migrations | Prisma (Prisma Migrate) |
-| Authentication | Database sessions (`express-session` + PostgreSQL session store) |
+| Authentication | Better Auth (email/password, database sessions via the Prisma adapter) |
 | AI | Claude API via `@anthropic-ai/sdk` |
 | Email (inbound + outbound) | SendGrid or Mailgun — to be decided |
 | Background jobs | pg-boss (job queue in PostgreSQL) |
@@ -43,10 +43,17 @@ See [project-scope.md](project-scope.md) for what the system does.
   - An empty database must be buildable from the migrations alone.
 
 ## Authentication
-- **Database sessions** with `express-session` and a PostgreSQL session store (e.g. `connect-pg-simple`).
-  - The session table is created by a Prisma migration, not by the store at runtime (`createTableIfMissing: false`).
-  - Session cookie: `httpOnly`, `secure` in production, `sameSite: "lax"`.
-- Passwords hashed with **argon2** (or bcrypt).
+- **Better Auth** (`server/src/auth/auth.ts`) with email/password and the **Prisma adapter**.
+  - Sessions are stored in PostgreSQL (`session` table). No `secondaryStorage` and no `cookieCache`, so every request
+    is checked against the database and signing out takes effect immediately.
+  - Its tables (`user`, `session`, `account`, `verification`) come from `bunx auth generate` and are applied with
+    Prisma Migrate like every other table. After changing the auth config (fields, plugins), regenerate and add a
+    migration; never `auth migrate`.
+  - Public sign-up is disabled. Users are created on the server: the seed script, later the admin's user management.
+  - The handler is mounted at `/api/auth/*splat` before `express.json()`. Routes check the session with `requireAuth`.
+  - Cookies are `httpOnly`, `sameSite: "lax"` and `secure` in production (Better Auth defaults). Origin checks
+    (CSRF) stay on; the Vite dev origin is in `trustedOrigins`.
+- Passwords hashed by Better Auth (scrypt).
 - Roles: `admin` and `agent`. Only admins can create, edit or deactivate agents.
 - **First admin**: a seed script creates the admin from environment variables (`ADMIN_EMAIL`, `ADMIN_PASSWORD`) on the
   first deploy, if no admin exists yet.
@@ -101,7 +108,7 @@ test the real webhook locally.
 - **docker-compose** for local development: app + PostgreSQL.
 - **Railway**: the Docker image as the app service, plus Railway Postgres.
   - Migrations run as a deploy step before the app starts: `prisma migrate deploy`, then the admin seed, then the app.
-- Configuration through environment variables: `DATABASE_URL`, `SESSION_SECRET`, `ANTHROPIC_API_KEY`, email
+- Configuration through environment variables: `DATABASE_URL`, `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`, `ANTHROPIC_API_KEY`, email
   provider keys, `ADMIN_EMAIL`, `ADMIN_PASSWORD`, `KB_GOOGLE_DOC_ID`.
 
 ## Suggested project layout

@@ -6,7 +6,13 @@ import { createApp, type AppDependencies } from './app.ts'
 let server: Server | undefined
 
 async function start(deps: Partial<AppDependencies> = {}) {
-  const app = createApp({ checkDatabase: async () => {}, ...deps })
+  const app = createApp({
+    checkDatabase: async () => {},
+    authHandler: (_req, res) => {
+      res.json({ stub: 'auth' })
+    },
+    ...deps,
+  })
   server = app.listen(0)
   await new Promise<void>((resolve) => server!.once('listening', resolve))
   const { port } = server.address() as AddressInfo
@@ -41,4 +47,10 @@ test('unknown API route returns JSON 404', async () => {
   const res = await fetch(`${baseUrl}/api/does-not-exist`)
   expect(res.status).toBe(404)
   expect(await res.json()).toEqual({ error: 'Not found' })
+})
+
+test('requests under /api/auth go to the auth handler', async () => {
+  const baseUrl = await start()
+  const res = await fetch(`${baseUrl}/api/auth/sign-in/email`, { method: 'POST' })
+  expect(await res.json()).toEqual({ stub: 'auth' })
 })

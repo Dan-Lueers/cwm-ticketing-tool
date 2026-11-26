@@ -1,9 +1,11 @@
+import { toNodeHandler } from 'better-auth/node'
 import { createApp } from './app.ts'
+import { auth } from './auth/auth.ts'
 import { checkDatabase, prisma } from './db/prisma.ts'
 
 const port = Number(process.env.PORT ?? 3000)
 
-const server = createApp({ checkDatabase }).listen(port, () => {
+const server = createApp({ checkDatabase, authHandler: toNodeHandler(auth) }).listen(port, () => {
   console.log(`Server listening on http://localhost:${port}`)
 })
 

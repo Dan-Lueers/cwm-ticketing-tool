@@ -1,12 +1,17 @@
-import express, { type ErrorRequestHandler } from 'express'
+import express, { type ErrorRequestHandler, type RequestHandler } from 'express'
 
 export type AppDependencies = {
   /** Resolves if the database is reachable, rejects otherwise. */
   checkDatabase: () => Promise<void>
+  /** Better Auth's request handler (`toNodeHandler(auth)`), serving everything under /api/auth. */
+  authHandler: RequestHandler
 }
 
-export function createApp({ checkDatabase }: AppDependencies) {
+export function createApp({ checkDatabase, authHandler }: AppDependencies) {
   const app = express()
+
+  // Better Auth reads the raw request body, so it must be mounted before express.json().
+  app.all('/api/auth/*splat', authHandler)
 
   app.use(express.json())
 
