@@ -3,12 +3,11 @@ import { afterAll, beforeAll, expect, test } from 'bun:test'
 import type { Server } from 'node:http'
 import type { AddressInfo } from 'node:net'
 import { toNodeHandler } from 'better-auth/node'
-import express from 'express'
 import { createApp } from '../app.ts'
 import { checkDatabase, prisma } from '../db/prisma.ts'
-import { createUserIfMissing } from '../db/seed.ts'
+import { ensureUser } from '../db/seed.ts'
+import { Role } from '../generated/prisma/enums.ts'
 import { auth, type Session } from './auth.ts'
-import { requireAuth } from './require-auth.ts'
 
 const email = `auth-test-${crypto.randomUUID()}@example.com`
 const password = 'correct horse battery staple'
@@ -17,17 +16,14 @@ let server: Server
 let baseUrl: string
 
 beforeAll(async () => {
-  await createUserIfMissing({ email, password, name: 'Auth Test' })
+  await ensureUser({ email, password, name: 'Auth Test', role: Role.agent })
 
-  const app = createApp({ checkDatabase, authHandler: toNodeHandler(auth) })
-  // A test-only protected route, on an outer app (inside createApp it would hit the /api 404 handler).
-  const outer = express()
-  outer.get('/protected', requireAuth((headers) => auth.api.getSession({ headers })), (req, res) => {
-    res.json({ email: req.user?.email })
+  const app = createApp({
+    checkDatabase,
+    authHandler: toNodeHandler(auth),
+    getSession: (headers) => auth.api.getSession({ headers }),
   })
-  outer.use(app)
-
-  server = outer.listen(0)
+  server = app.listen(0)
   await new Promise<void>((resolve) => server.once('listening', resolve))
   baseUrl = `http://localhost:${(server.address() as AddressInfo).port}`
 })
@@ -60,9 +56,21 @@ function cookieFrom(res: Response) {
 }
 
 test('seeding the same email twice creates the user once', async () => {
-  const again = await createUserIfMissing({ email, password, name: 'Auth Test' })
-  expect(again.created).toBe(false)
+  const again = await ensureUser({ email, password, name: 'Auth Test', role: Role.agent })
+  expect(again).toMatchObject({ created: false, roleChanged: false })
   expect(await prisma.user.count({ where: { email } })).toBe(1)
+})
+
+test('seeding an existing user with another role changes the role', async () => {
+  const otherEmail = `auth-test-${crypto.randomUUID()}@example.com`
+  try {
+    await ensureUser({ email: otherEmail, password, name: 'Promote Me', role: Role.agent })
+    const promoted = await ensureUser({ email: otherEmail, password, name: 'Promote Me', role: Role.admin })
+    expect(promoted).toMatchObject({ created: false, roleChanged: true })
+    expect((await prisma.user.findUnique({ where: { email: otherEmail } }))?.role).toBe(Role.admin)
+  } finally {
+    await prisma.user.deleteMany({ where: { email: otherEmail } })
+  }
 })
 
 test('sign-in with the right password creates a database session', async () => {
@@ -73,6 +81,7 @@ test('sign-in with the right password creates a database session', async () => {
 
   const result = await getSession(cookie)
   expect(result?.user.email).toBe(email)
+  expect(result?.user.role).toBe(Role.agent)
   expect(await prisma.session.count({ where: { userId: result!.user.id } })).toBeGreaterThan(0)
 })
 
@@ -100,18 +109,19 @@ test('public sign-up is disabled', async () => {
   const res = await fetch(`${baseUrl}/api/auth/sign-up/email`, {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ email: `signup-${crypto.randomUUID()}@example.com`, password, name: 'Nobody' }),
+    // Asking for the admin role doesn't help either: sign-up is off, and `role` isn't accepted as input.
+    body: JSON.stringify({ email: `signup-${crypto.randomUUID()}@example.com`, password, name: 'Nobody', role: Role.admin }),
   })
   expect(res.status).toBe(400)
 })
 
-test('requireAuth returns 401 without a session and passes the user through with one', async () => {
-  const without = await fetch(`${baseUrl}/protected`)
+test('GET /api/me returns 401 without a session and the user (with role) with one', async () => {
+  const without = await fetch(`${baseUrl}/api/me`)
   expect(without.status).toBe(401)
   expect(await without.json()).toEqual({ error: 'Unauthorized' })
 
   const cookie = cookieFrom(await signIn({ email, password }))
-  const withSession = await fetch(`${baseUrl}/protected`, { headers: { cookie } })
+  const withSession = await fetch(`${baseUrl}/api/me`, { headers: { cookie } })
   expect(withSession.status).toBe(200)
-  expect(await withSession.json()).toEqual({ email })
+  expect(((await withSession.json()) as { user: unknown }).user).toMatchObject({ email, role: Role.agent })
 })

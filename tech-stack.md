@@ -54,7 +54,11 @@ See [project-scope.md](project-scope.md) for what the system does.
   - Cookies are `httpOnly`, `sameSite: "lax"` and `secure` in production (Better Auth defaults). Origin checks
     (CSRF) stay on; the Vite dev origin is in `trustedOrigins`.
 - Passwords hashed by Better Auth (scrypt).
-- Roles: `admin` and `agent`. Only admins can create, edit or deactivate agents.
+- Roles: `admin` and `agent`, a Postgres enum (`enum Role` in `schema.prisma`) stored in `user.role`, default `agent`.
+  - Code uses Prisma's generated `Role` (`Role.admin`, `Role.agent` from `src/generated/prisma/enums.ts`), never
+    string literals. Better Auth's `role` additional field takes its values from it, with `input: false` so no API
+    request can set it; only server code does.
+  - `bunx auth generate` writes `role String`: keep the enum when regenerating the schema. Only admins can create, edit or deactivate agents.
 - **First admin**: a seed script creates the admin from environment variables (`ADMIN_EMAIL`, `ADMIN_PASSWORD`) on the
   first deploy, if no admin exists yet.
 

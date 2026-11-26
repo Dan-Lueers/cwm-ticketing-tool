@@ -1,21 +1,35 @@
-// Creates the first user from ADMIN_EMAIL / ADMIN_PASSWORD if no user with that email exists yet.
+// Makes sure the admin from ADMIN_EMAIL / ADMIN_PASSWORD exists and has the admin role.
 // Safe to run on every deploy. Run with `bun run db:seed`.
-import { auth } from '../auth/auth.ts'
+import { auth, type Session } from '../auth/auth.ts'
+import { Role } from '../generated/prisma/enums.ts'
 import { prisma } from './prisma.ts'
 
 /**
- * Creates a user with an email/password account, unless one with that email already exists.
- * Public sign-up is disabled (auth.api.signUpEmail refuses), so this goes through Better Auth's
- * internal adapter, the same way the sign-up endpoint does.
+ * Makes sure a user with this email exists, has an email/password account and has the given role.
+ * Never changes an existing password. Public sign-up is disabled (auth.api.signUpEmail refuses), so this
+ * goes through Better Auth's internal adapter, the same way the sign-up endpoint does.
  */
-export async function createUserIfMissing({ email, password, name }: { email: string; password: string; name: string }) {
+export async function ensureUser({
+  email,
+  password,
+  name,
+  role,
+}: {
+  email: string
+  password: string
+  name: string
+  role: Role
+}) {
   const ctx = await auth.$context
   const normalizedEmail = email.toLowerCase()
 
   const existing = await ctx.internalAdapter.findUserByEmail(normalizedEmail, { includeAccounts: true })
-  const user =
-    existing?.user ??
-    (await ctx.internalAdapter.createUser({ email: normalizedEmail, name, emailVerified: false }, { method: 'admin' }))
+  // The internal adapter is typed with the base user fields only; the row also has our additional fields.
+  let user = (existing?.user ??
+    (await ctx.internalAdapter.createUser(
+      { email: normalizedEmail, name, emailVerified: false, role },
+      { method: 'admin' },
+    ))) as Session['user']
 
   // Also covers a previous run that created the user but failed before linking the password.
   const hasPassword = existing?.accounts.some((account) => account.providerId === 'credential') ?? false
@@ -27,7 +41,13 @@ export async function createUserIfMissing({ email, password, name }: { email: st
       password: await ctx.password.hash(password),
     })
   }
-  return { created: !existing, user }
+
+  const roleChanged = user.role !== role
+  if (roleChanged) {
+    user = (await ctx.internalAdapter.updateUser(user.id, { role })) as Session['user']
+  }
+
+  return { created: !existing, roleChanged: !!existing && roleChanged, user }
 }
 
 if (import.meta.main) {
@@ -35,7 +55,13 @@ if (import.meta.main) {
   const password = process.env.ADMIN_PASSWORD
   if (!email || !password) throw new Error('ADMIN_EMAIL and ADMIN_PASSWORD must be set.')
 
-  const { created } = await createUserIfMissing({ email, password, name: 'Admin' })
-  console.log(created ? `Created user ${email}` : `User ${email} already exists, nothing to do`)
+  const { created, roleChanged } = await ensureUser({ email, password, name: 'Admin', role: Role.admin })
+  console.log(
+    created
+      ? `Created admin ${email}`
+      : roleChanged
+        ? `Made existing user ${email} an admin`
+        : `Admin ${email} already exists, nothing to do`,
+  )
   await prisma.$disconnect()
 }

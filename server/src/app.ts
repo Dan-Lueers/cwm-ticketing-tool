@@ -1,13 +1,16 @@
 import express, { type ErrorRequestHandler, type RequestHandler } from 'express'
+import { requireAuth, type GetSession } from './auth/require-auth.ts'
 
 export type AppDependencies = {
   /** Resolves if the database is reachable, rejects otherwise. */
   checkDatabase: () => Promise<void>
   /** Better Auth's request handler (`toNodeHandler(auth)`), serving everything under /api/auth. */
   authHandler: RequestHandler
+  /** Looks up the session for the request headers (`auth.api.getSession`). */
+  getSession: GetSession
 }
 
-export function createApp({ checkDatabase, authHandler }: AppDependencies) {
+export function createApp({ checkDatabase, authHandler, getSession }: AppDependencies) {
   const app = express()
 
   // Better Auth reads the raw request body, so it must be mounted before express.json().
@@ -23,6 +26,11 @@ export function createApp({ checkDatabase, authHandler }: AppDependencies) {
       console.error('Database health check failed:', err)
       res.status(503).json({ status: 'error', database: 'unreachable' })
     }
+  })
+
+  // The signed-in user (401 without a session). Not under /api/auth: Better Auth answers everything there.
+  app.get('/api/me', requireAuth(getSession), (req, res) => {
+    res.json({ user: req.user })
   })
 
   // Unknown API routes return JSON instead of Express's default HTML page.

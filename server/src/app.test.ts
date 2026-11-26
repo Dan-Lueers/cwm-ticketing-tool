@@ -11,6 +11,7 @@ async function start(deps: Partial<AppDependencies> = {}) {
     authHandler: (_req, res) => {
       res.json({ stub: 'auth' })
     },
+    getSession: async () => null,
     ...deps,
   })
   server = app.listen(0)
@@ -53,4 +54,11 @@ test('requests under /api/auth go to the auth handler', async () => {
   const baseUrl = await start()
   const res = await fetch(`${baseUrl}/api/auth/sign-in/email`, { method: 'POST' })
   expect(await res.json()).toEqual({ stub: 'auth' })
+})
+
+test('GET /api/me returns 401 without a session', async () => {
+  const baseUrl = await start()
+  const res = await fetch(`${baseUrl}/api/me`)
+  expect(res.status).toBe(401)
+  expect(await res.json()).toEqual({ error: 'Unauthorized' })
 })

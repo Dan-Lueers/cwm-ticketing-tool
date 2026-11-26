@@ -1,6 +1,7 @@
 import { betterAuth } from 'better-auth'
 import { prismaAdapter } from 'better-auth/adapters/prisma'
 import { prisma } from '../db/prisma.ts'
+import { Role } from '../generated/prisma/enums.ts'
 
 // BETTER_AUTH_SECRET and BETTER_AUTH_URL come from the environment.
 // Sessions are stored in the database (no secondaryStorage, no cookieCache): every request is checked against it.
@@ -10,6 +11,13 @@ export const auth = betterAuth({
     enabled: true,
     // No public sign-up: users are created on the server (see src/db/seed.ts, later the admin's user management).
     disableSignUp: true,
+  },
+  user: {
+    additionalFields: {
+      // input: false: no API request can set or change the role; only server code does (seed, user management).
+      // Values come from the Prisma `Role` enum (prisma/schema.prisma), so the two can't drift apart.
+      role: { type: Object.values(Role), required: true, defaultValue: Role.agent, input: false },
+    },
   },
   // The Vite dev server (http://localhost:5173) proxies /api to Express; in production it's the same origin.
   trustedOrigins: process.env.NODE_ENV === 'production' ? [] : ['http://localhost:5173'],

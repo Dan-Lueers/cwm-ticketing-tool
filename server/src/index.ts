@@ -5,7 +5,11 @@ import { checkDatabase, prisma } from './db/prisma.ts'
 
 const port = Number(process.env.PORT ?? 3000)
 
-const server = createApp({ checkDatabase, authHandler: toNodeHandler(auth) }).listen(port, () => {
+const server = createApp({
+  checkDatabase,
+  authHandler: toNodeHandler(auth),
+  getSession: (headers) => auth.api.getSession({ headers }),
+}).listen(port, () => {
   console.log(`Server listening on http://localhost:${port}`)
 })
 

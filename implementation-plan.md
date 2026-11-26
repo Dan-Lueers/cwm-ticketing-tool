@@ -33,12 +33,14 @@ endpoint simulates incoming emails and outgoing emails are logged, so the whole 
 - [x] 1.1 Add Prisma, point it at the local PostgreSQL
 - [x] 1.2 First migration: Better Auth tables (`user`, `session`, `account`, `verification`), generated with
       `bunx auth generate` into `schema.prisma`, applied with Prisma Migrate
-- [ ] 1.3 Migration: add `role` (`admin`/`agent`) and `active` to `user` (Better Auth `additionalFields`, `input: false`)
+- [x] 1.3 Migration: add `role` to `user` as a `Role` enum (`admin`/`agent`, default `agent`; Better Auth
+      `additionalFields`, `input: false`)
+- [ ] 1.3b Migration: add `active` to `user`
 - [ ] 1.4 `migrate` script runs `prisma migrate deploy`; the server's start script runs it before listening
 - [ ] 1.5 Test database: test setup builds a fresh database from the migrations (no hand-written tables)
 - [x] 1.6 Seed script (`bun run db:seed`): creates the user from `ADMIN_EMAIL` / `ADMIN_PASSWORD` if it doesn't exist
       (idempotent)
-- [ ] 1.7 Seed sets `role: admin` (after 1.3)
+- [x] 1.7 Seed makes that user an admin (creates it with `role: admin`, or promotes an existing user)
 
 **Done when:** an empty database is built from migrations alone, and the seed creates the admin exactly once.
 
@@ -47,12 +49,14 @@ endpoint simulates incoming emails and outgoing emails are logged, so the whole 
       disabled
 - [x] 2.2 Mount the handler at `/api/auth/*splat` (before `express.json()`): `POST /api/auth/sign-in/email`,
       `POST /api/auth/sign-out`, `GET /api/auth/get-session`
-- [x] 2.3 Middleware: `requireAuth`
-- [ ] 2.4 Middleware: `requireAdmin` (after 1.3); deactivated users can't sign in and lose their sessions
+- [x] 2.3 Middleware: `requireAuth` (sets `req.user` / `req.session`, typed in `src/types/express.d.ts`)
+- [x] 2.3b `GET /api/me`: the signed-in user, 401 without a session
+- [ ] 2.4 Middleware: `requireAdmin` (403 unless `req.user.role` is `admin`)
+- [ ] 2.4b Deactivated users can't sign in and lose their sessions (after 1.3b)
 - [ ] 2.5 Login rate limiting: check Better Auth's built-in limit (on in production) fits, set `rateLimit` if not
 - [x] 2.6 Integration tests: sign-in success/failure, sign-out, protected route without session → 401, sign-up disabled
-- [ ] 2.6b Integration test: deactivated user can't sign in (after 2.4)
-- [ ] 2.7 Client: login page, auth context (Better Auth React client, `useSession`), logout button
+- [ ] 2.6b Integration test: deactivated user can't sign in (after 2.4b)
+- [ ] 2.7 Client: login page, auth context (loads `/api/me`, or the Better Auth React client's `useSession`), logout button
 - [ ] 2.8 Client: protected routes redirect to login; admin-only routes hidden from agents
 
 **Done when:** the seeded admin can log in, reload the page and stay logged in, and log out.

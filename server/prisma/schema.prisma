@@ -10,6 +10,13 @@ datasource db {
   provider = "postgresql"
 }
 
+/// What a user may do. Better Auth declares the same values in src/auth/auth.ts (user.additionalFields.role).
+/// `bunx auth generate` writes `role String`; keep this enum when regenerating.
+enum Role {
+  admin
+  agent
+}
+
 model User {
   id            String    @id
   name          String
@@ -20,6 +27,8 @@ model User {
   updatedAt     DateTime  @updatedAt
   sessions      Session[]
   accounts      Account[]
+
+  role Role @default(agent)
 
   @@unique([email])
   @@map("user")
