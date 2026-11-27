@@ -53,7 +53,9 @@ endpoint simulates incoming emails and outgoing emails are logged, so the whole 
 - [x] 2.3b `GET /api/me`: the signed-in user, 401 without a session
 - [ ] 2.4 Middleware: `requireAdmin` (403 unless `req.user.role` is `admin`)
 - [ ] 2.4b Deactivated users can't sign in and lose their sessions (after 1.3b)
-- [ ] 2.5 Login rate limiting: check Better Auth's built-in limit (on in production) fits, set `rateLimit` if not
+- [ ] 2.5 Login rate limiting: check Better Auth's built-in limit (on in production only, `rateLimit` in
+      `auth.ts`) fits. On Railway, check which client-IP headers arrive (`X-Forwarded-For` replaced or appended,
+      `X-Real-IP`) and set `advanced.ipAddress` so the limiter sees real client IPs, not one shared bucket
 - [x] 2.6 Integration tests: sign-in success/failure, sign-out, protected route without session → 401, sign-up disabled
 - [ ] 2.6b Integration test: deactivated user can't sign in (after 2.4b)
 - [x] 2.7 Client: login page, auth context (Better Auth React client's `useSession`, `client/src/lib/auth-client.ts`),
@@ -145,7 +147,8 @@ with a suggested reply.
 **Done when:** the dashboard shows correct numbers for the sample data.
 
 ## Phase 10 — Deployment (Docker + Railway)
-- [ ] 10.1 Multi-stage `Dockerfile`: build the client and server, run Express serving API and static client
+- [ ] 10.1 Multi-stage `Dockerfile`: build the client and server, run Express serving API and static client;
+      `ENV NODE_ENV=production` (rate limiting and production auth settings depend on it)
 - [ ] 10.2 Express serves the client build and falls back to `index.html` for React Router routes
 - [ ] 10.3 Container start: `prisma migrate deploy` → admin seed → start server
 - [ ] 10.4 Build and run the image locally against docker-compose PostgreSQL
@@ -156,6 +159,7 @@ with a suggested reply.
 **Done when:** the full flow works on the Railway URL.
 
 ## Phase 11 — End-to-end tests and polish
+- [x] 11.0 Playwright setup: `e2e/` workspace, separate `ticketing-tool-test` database rebuilt from migrations per run
 - [ ] 11.1 Playwright: login, admin creates agent, ticket list filtering, ticket detail reply, simulated email → AI answer (mocked)
 - [ ] 11.2 Loading, empty and error states on every page
 - [ ] 11.3 README: local setup, environment variables, how to run tests, how to deploy

@@ -13,8 +13,9 @@ export default defineConfig({
   },
   server: {
     proxy: {
-      // Forward API calls to the Express server during development.
-      '/api': 'http://localhost:3000',
+      // Forward API calls to the Express server during development. The end-to-end tests point it at their own
+      // server with API_PROXY_TARGET (e2e/playwright.config.ts).
+      '/api': process.env.API_PROXY_TARGET ?? 'http://localhost:3000',
     },
   },
 })

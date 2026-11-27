@@ -30,6 +30,7 @@ TypeScript 7), so training data is often out of date.
 | Hook Form resolvers (`zodResolver`) | `/react-hook-form/resolvers` |
 | Zod 4 | `/colinhacks/zod` |
 | shadcn/ui (Base UI, `base-nova` style) | `/shadcn-ui/ui` |
+| Playwright (`@playwright/test`) | `/microsoft/playwright` |
 
 Add libraries to this table as they're introduced (pg-boss, Anthropic SDK, ...).
 
@@ -43,7 +44,8 @@ Add libraries to this table as they're introduced (pg-boss, Anthropic SDK, ...).
 | `bun install` | Install dependencies for all workspaces |
 | `bun run dev` | Start client (http://localhost:5173) and server (http://localhost:3000) with reload |
 | `bun run test` | Server tests (`bun test`) |
-| `bun run typecheck` | Type-check the server and build the client |
+| `bun run test:e2e` | End-to-end tests (Playwright) against the test database |
+| `bun run typecheck` | Type-check the server and e2e, and build the client |
 | `bun run lint` | Lint the client (oxlint) |
 | `bun run build` | Build the client into `client/dist` |
 
@@ -63,7 +65,20 @@ Database commands (run from `server/`):
 ```
 client/   React + TypeScript (Vite)
 server/   Express 5 + TypeScript, run directly by Bun (no build step)
+e2e/      Playwright end-to-end tests (tests in e2e/tests/)
 ```
+
+## End-to-end tests (Playwright)
+
+- Config: `e2e/playwright.config.ts`. Environment: `e2e/.env` (copy `e2e/.env.example`), never `server/.env`.
+- **Separate database** `ticketing-tool-test`: every run drops it, rebuilds it from the migrations and seeds the admin
+  from `e2e/.env` (`e2e/prepare-db.ts`; run alone with `cd e2e && bun run db:reset`). It refuses any database
+  whose name doesn't end in `-test`.
+- Playwright starts its own API on port 3100 and Vite on 5174, so it runs next to `bun run dev` (3000/5173). It
+  never reuses a running server. Vite's proxy target comes from `API_PROXY_TARGET`.
+- The test server runs with `NODE_ENV=test` (rate limiting is production-only). Tests run one at a time (one shared database).
+- Only Chromium is installed: `cd e2e && bunx playwright install chromium`. Interactive runner: `bun run test:ui`
+  in `e2e/`.
 
 ## Conventions
 
@@ -101,7 +116,8 @@ server/   Express 5 + TypeScript, run directly by Bun (no build step)
 Better Auth with email/password, sessions stored in PostgreSQL. Design and reasons: tech-stack.md → Authentication.
 
 **Server**
-- Config: `server/src/auth/auth.ts` (`auth`, `Session` type). No `cookieCache` or `secondaryStorage`: every request
+- Config: `server/src/auth/auth.ts` (`auth`, `Session` type). Rate limiting is on only when
+  `NODE_ENV=production`, so every deploy must set it. No `cookieCache` or `secondaryStorage`: every request
   checks the database, so signing out takes effect immediately. Keep it that way.
 - Better Auth's handler serves everything under `/api/auth/*` and is mounted **before** `express.json()` (it reads the
   raw body). Our own endpoints never go under `/api/auth` (e.g. the current user is `GET /api/me`).

@@ -32,11 +32,12 @@ export const auth = betterAuth({
       role: { type: Object.values(Role), required: true, defaultValue: Role.agent, input: false },
     },
   },
-  // Better Auth only enables its rate limiter when NODE_ENV is "production"; enable it everywhere except tests
-  // (`bun test` sets NODE_ENV=test), so a deploy without NODE_ENV still limits password guessing.
-  rateLimit: { enabled: process.env.NODE_ENV !== 'test' },
-  // The Vite dev server (http://localhost:5173) proxies /api to Express; in production it's the same origin.
-  trustedOrigins: process.env.NODE_ENV === 'production' ? [] : ['http://localhost:5173'],
+  // Rate limiting (login brute-force protection) only in production. Deploys must set NODE_ENV=production, or
+  // sign-in attempts are unlimited.
+  rateLimit: { enabled: process.env.NODE_ENV === 'production' },
+  // The Vite dev server (http://localhost:5173) proxies /api to Express, and the end-to-end tests' Vite runs on
+  // http://localhost:5174 (e2e/playwright.config.ts); in production it's the same origin.
+  trustedOrigins: process.env.NODE_ENV === 'production' ? [] : ['http://localhost:5173', 'http://localhost:5174'],
 })
 
 export type Session = typeof auth.$Infer.Session
