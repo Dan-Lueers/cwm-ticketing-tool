@@ -70,15 +70,19 @@ e2e/      Playwright end-to-end tests (tests in e2e/tests/)
 
 ## End-to-end tests (Playwright)
 
-- Config: `e2e/playwright.config.ts`. Environment: `e2e/.env` (copy `e2e/.env.example`), never `server/.env`.
-- **Separate database** `ticketing-tool-test`: every run drops it, rebuilds it from the migrations and seeds the admin
-  from `e2e/.env` (`e2e/prepare-db.ts`; run alone with `cd e2e && bun run db:reset`). It refuses any database
-  whose name doesn't end in `-test`.
-- Playwright starts its own API on port 3100 and Vite on 5174, so it runs next to `bun run dev` (3000/5173). It
-  never reuses a running server. Vite's proxy target comes from `API_PROXY_TARGET`.
-- The test server runs with `NODE_ENV=test` (rate limiting is production-only). Tests run one at a time (one shared database).
-- Only Chromium is installed: `cd e2e && bunx playwright install chromium`. Interactive runner: `bun run test:ui`
-  in `e2e/`.
+Playwright tests live in `e2e/tests/`. How they're written, run and set up (separate `ticketing-tool-test`
+database, own ports) is in `.claude/agents/e2e-test-writer.md`.
+
+- **Delegate e2e test work to the `e2e-test-writer` subagent:** adding, extending or fixing tests in `e2e/`. Don't
+  write Playwright tests in the main session.
+- **When:** when asked, and after finishing a user-visible feature whose implementation-plan task or "Done when"
+  describes a flow (log in, admin creates agent, ticket reply, ...). Ask before starting it if the user didn't.
+- **What to tell it:** the flow or feature to cover, the routes, pages and API endpoints involved, which roles
+  should and shouldn't have access, and anything not built yet that it should leave out. It starts cold: it
+  doesn't see this conversation.
+- **Afterwards:** relay its report. It only changes `e2e/`; app bugs come back as `test.fixme()` tests and missing
+  pieces (endpoints, accessible names, mocks) as a list. Fix those in the app, then have it remove the `fixme` and
+  rerun.
 
 ## Conventions
 
