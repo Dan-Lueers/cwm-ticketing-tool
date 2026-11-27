@@ -113,10 +113,24 @@ test('sign-out deletes the session', async () => {
   const cookie = cookieFrom(await signIn({ email, password }))
   const { session } = (await getSession(cookie))!
 
-  const res = await fetch(`${baseUrl}/api/auth/sign-out`, { method: 'POST', headers: { cookie } })
+  // Origin checks are on (auth.ts): a cookie-authenticated POST must come from a trusted origin, like the browser's.
+  const res = await fetch(`${baseUrl}/api/auth/sign-out`, {
+    method: 'POST',
+    headers: { cookie, origin: 'http://localhost:5173' },
+  })
   expect(res.status).toBe(200)
   expect(await getSession(cookie)).toBeNull()
   expect(await prisma.session.findUnique({ where: { id: session.id } })).toBeNull()
+})
+
+test('a cookie-authenticated request from an untrusted origin is rejected', async () => {
+  const cookie = cookieFrom(await signIn({ email, password }))
+  const res = await fetch(`${baseUrl}/api/auth/sign-out`, {
+    method: 'POST',
+    headers: { cookie, origin: 'http://evil.example' },
+  })
+  expect(res.status).toBe(403)
+  expect(await getSession(cookie)).not.toBeNull()
 })
 
 test('public sign-up is disabled', async () => {

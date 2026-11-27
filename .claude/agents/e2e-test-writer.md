@@ -22,7 +22,8 @@ API in `server/`, React 19 + Vite client in `client/`, PostgreSQL via Prisma 7, 
 - **Config and environment:** `e2e/playwright.config.ts`, which loads `e2e/.env` (copy `e2e/.env.example`).
   `server/.env` is never used.
 - **Separate database** `ticketing-tool-test`: before the servers start, every run drops it, rebuilds it from the
-  migrations and seeds one admin from `e2e/.env` (`ADMIN_EMAIL` / `ADMIN_PASSWORD`) via `e2e/prepare-db.ts`. Run
+  migrations and seeds an admin (`ADMIN_EMAIL` / `ADMIN_PASSWORD`) and an agent (`AGENT_EMAIL` /
+  `AGENT_PASSWORD`) from `e2e/.env` via `e2e/prepare-db.ts`. Run
   that alone with `cd e2e && bun run db:reset`. It refuses any database whose name doesn't end in `-test`.
 - **Own servers:** Playwright starts its own API on port 3100 and Vite on 5174, so it runs next to `bun run dev`
   (3000/5173). It never reuses a running server. Vite's proxy target comes from `API_PROXY_TARGET`.
@@ -38,8 +39,8 @@ API in `server/`, React 19 + Vite client in `client/`, PostgreSQL via Prisma 7, 
 - Files go in `e2e/tests/` as `<feature>.spec.ts`, importing from `@playwright/test`. TypeScript strict, explicit
   `.ts` extensions on local imports. Shared helpers (sign-in, creating data) go in `e2e/tests/helpers/` or
   Playwright fixtures; don't copy them between files.
-- **Credentials:** read the seeded admin from `process.env.ADMIN_EMAIL` / `ADMIN_PASSWORD` (the config loads
-  `e2e/.env`). Never hard-code passwords that exist elsewhere.
+- **Credentials:** read the seeded users from `process.env.ADMIN_EMAIL` / `ADMIN_PASSWORD` and `AGENT_EMAIL` /
+  `AGENT_PASSWORD` (the config loads `e2e/.env`). Never hard-code passwords that exist elsewhere.
 - **Selectors:** user-facing locators first: `getByRole` with an accessible name, `getByLabel`, `getByText`.
   No CSS classes (the UI uses Tailwind/shadcn utility classes that change freely), no XPath, no `nth()` unless
   the order is the point. If an element has no accessible name or label, report it rather than adding test IDs.
@@ -48,8 +49,8 @@ API in `server/`, React 19 + Vite client in `client/`, PostgreSQL via Prisma 7, 
 - **Independent tests:** each test sets up what it needs and doesn't depend on another test's leftovers or order.
   Data a test creates gets unique values (e.g. `agent-${crypto.randomUUID()}@example.com`), since the database
   persists across tests in a run.
-- **Users:** there's no public sign-up. Before the user-management API exists, a test can only use the seeded
-  admin. Once `POST /api/users` exists, create agents through it (as the signed-in admin via `request` or the UI),
+- **Users:** there's no public sign-up. Before the user-management API exists, tests use the seeded admin and
+  agent. Once `POST /api/users` exists, create agents through it (as the signed-in admin via `request` or the UI),
   never by writing to the database directly.
 - **Sign-in:** sign in through the real login form in the test that covers login. For other tests a helper or a
   `storageState` setup project is fine; if you add one, explain why and keep it in `e2e/`.

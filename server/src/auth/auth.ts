@@ -32,6 +32,9 @@ export const auth = betterAuth({
       role: { type: Object.values(Role), required: true, defaultValue: Role.agent, input: false },
     },
   },
+  // Keep origin and CSRF checks on in every environment. Better Auth turns both off by default when NODE_ENV is
+  // "test" (bun test, the e2e server), which would leave them untested and off in any server started that way.
+  advanced: { disableOriginCheck: false, disableCSRFCheck: false },
   // Rate limiting (login brute-force protection) only in production. Deploys must set NODE_ENV=production, or
   // sign-in attempts are unlimited.
   rateLimit: { enabled: process.env.NODE_ENV === 'production' },

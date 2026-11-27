@@ -1,4 +1,4 @@
-// Rebuilds the end-to-end test database from scratch: drop, create, apply the migrations, seed the admin.
+// Rebuilds the end-to-end test database from scratch: drop, create, apply the migrations, seed an admin and an agent.
 // Runs before the test server starts (playwright.config.ts) and via `bun run db:reset`. It only reads the
 // environment it's given (e2e/.env), never server/.env, so it can't touch the development database.
 import { SQL } from 'bun'
@@ -38,5 +38,17 @@ async function run(cmd: string[]) {
 // Same steps as a deploy: migrations first, then the admin seed.
 await run(['bun', '--no-env-file', '--bun', 'prisma', 'migrate', 'deploy'])
 await run(['bun', '--no-env-file', 'src/db/seed.ts'])
+// A test agent too, so tests can check what non-admins can't do (there's no user-management API yet).
+await run([
+  'bun',
+  '--no-env-file',
+  '-e',
+  `import { ensureUser } from './src/db/seed.ts'
+   import { Role } from './src/generated/prisma/enums.ts'
+   import { prisma } from './src/db/prisma.ts'
+   await ensureUser({ email: process.env.AGENT_EMAIL, password: process.env.AGENT_PASSWORD, name: 'Test Agent', role: Role.agent })
+   console.log('Created agent ' + process.env.AGENT_EMAIL)
+   await prisma.$disconnect()`,
+])
 
 console.log(`Test database "${name}" rebuilt from migrations and seeded.`)
