@@ -7,7 +7,7 @@ import { createApp } from '../app.ts'
 import { checkDatabase, prisma } from '../db/prisma.ts'
 import { ensureUser } from '../db/seed.ts'
 import { Role } from '../generated/prisma/enums.ts'
-import { auth, type Session } from './auth.ts'
+import { auth, readAuthSecret, type Session } from './auth.ts'
 
 const email = `auth-test-${crypto.randomUUID()}@example.com`
 const password = 'correct horse battery staple'
@@ -59,6 +59,20 @@ test('seeding the same email twice creates the user once', async () => {
   const again = await ensureUser({ email, password, name: 'Auth Test', role: Role.agent })
   expect(again).toMatchObject({ created: false, roleChanged: false })
   expect(await prisma.user.count({ where: { email } })).toBe(1)
+})
+
+test('seeding rejects a password outside the length limits', async () => {
+  const shortEmail = `auth-test-${crypto.randomUUID()}@example.com`
+  await expect(ensureUser({ email: shortEmail, password: 'short', name: 'Short', role: Role.agent })).rejects.toThrow(
+    'Password must be',
+  )
+  expect(await prisma.user.count({ where: { email: shortEmail } })).toBe(0)
+})
+
+test('the auth secret must be set and at least 32 characters', () => {
+  expect(() => readAuthSecret(undefined)).toThrow('BETTER_AUTH_SECRET')
+  expect(() => readAuthSecret('too-short')).toThrow('BETTER_AUTH_SECRET')
+  expect(readAuthSecret('x'.repeat(32))).toBe('x'.repeat(32))
 })
 
 test('seeding an existing user with another role changes the role', async () => {

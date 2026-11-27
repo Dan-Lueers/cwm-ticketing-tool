@@ -21,6 +21,11 @@ export async function ensureUser({
   role: Role
 }) {
   const ctx = await auth.$context
+  // Hashing directly (below) skips the length rules Better Auth applies on sign-up and password change.
+  const { minPasswordLength, maxPasswordLength } = ctx.password.config
+  if (password.length < minPasswordLength || password.length > maxPasswordLength) {
+    throw new Error(`Password must be ${minPasswordLength}-${maxPasswordLength} characters.`)
+  }
   const normalizedEmail = email.toLowerCase()
 
   const existing = await ctx.internalAdapter.findUserByEmail(normalizedEmail, { includeAccounts: true })
@@ -54,6 +59,9 @@ if (import.meta.main) {
   const email = process.env.ADMIN_EMAIL
   const password = process.env.ADMIN_PASSWORD
   if (!email || !password) throw new Error('ADMIN_EMAIL and ADMIN_PASSWORD must be set.')
+  if (process.env.NODE_ENV === 'production' && password === 'password123') {
+    throw new Error('ADMIN_PASSWORD is the development default from .env.example; set a strong password.')
+  }
 
   const { created, roleChanged } = await ensureUser({ email, password, name: 'Admin', role: Role.admin })
   console.log(
