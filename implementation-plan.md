@@ -56,8 +56,10 @@ endpoint simulates incoming emails and outgoing emails are logged, so the whole 
 - [ ] 2.5 Login rate limiting: check Better Auth's built-in limit (on in production) fits, set `rateLimit` if not
 - [x] 2.6 Integration tests: sign-in success/failure, sign-out, protected route without session → 401, sign-up disabled
 - [ ] 2.6b Integration test: deactivated user can't sign in (after 2.4b)
-- [ ] 2.7 Client: login page, auth context (loads `/api/me`, or the Better Auth React client's `useSession`), logout button
+- [x] 2.7 Client: login page, auth context (Better Auth React client's `useSession`, `client/src/lib/auth-client.ts`),
+      sign-out button in the nav bar
 - [ ] 2.8 Client: protected routes redirect to login; admin-only routes hidden from agents
+      (redirect done via `RequireAuth` layout route; admin-only hiding still open)
 
 **Done when:** the seeded admin can log in, reload the page and stay logged in, and log out.
 

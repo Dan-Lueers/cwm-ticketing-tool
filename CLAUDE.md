@@ -24,8 +24,10 @@ TypeScript 7), so training data is often out of date.
 | Vite | `/vitejs/vite` |
 | Prisma ORM 7 | `/prisma/orm/7.10.1` (guides: `/prisma/web`) |
 | Better Auth 1.7 | `/better-auth/better-auth/v1.7.15` |
+| React Router 8 (declarative mode) | `/remix-run/react-router` |
+| Tailwind CSS 4 | `/tailwindlabs/tailwindcss.com` |
 
-Add libraries to this table as they're introduced (React Router, Tailwind, pg-boss, Anthropic SDK, ...).
+Add libraries to this table as they're introduced (pg-boss, Anthropic SDK, ...).
 
 **Prisma: stay on version 7.** npm's `latest` tag is Prisma 8 ("Prisma Next"), a rewrite with no `schema.prisma`,
 `generate` or `migrate dev`. Many current Prisma docs describe 8; only follow docs for Prisma 7.
