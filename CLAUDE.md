@@ -26,6 +26,9 @@ TypeScript 7), so training data is often out of date.
 | Better Auth 1.7 | `/better-auth/better-auth/v1.7.15` |
 | React Router 8 (declarative mode) | `/remix-run/react-router` |
 | Tailwind CSS 4 | `/tailwindlabs/tailwindcss.com` |
+| React Hook Form 7 | `/react-hook-form/documentation` |
+| Hook Form resolvers (`zodResolver`) | `/react-hook-form/resolvers` |
+| Zod 4 | `/colinhacks/zod` |
 
 Add libraries to this table as they're introduced (pg-boss, Anthropic SDK, ...).
 
