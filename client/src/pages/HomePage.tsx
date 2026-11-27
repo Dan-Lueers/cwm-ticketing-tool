@@ -21,8 +21,8 @@ export function HomePage() {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-2xl font-semibold text-gray-900 dark:text-gray-100">Welcome, {session?.user.name}</h1>
-      <div className="text-sm text-gray-600 dark:text-gray-400">
+      <h1 className="text-2xl font-semibold">Welcome, {session?.user.name}</h1>
+      <div className="text-sm text-muted-foreground">
         {error ? (
           <p>API: unreachable ({error})</p>
         ) : health ? (

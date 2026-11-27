@@ -8,7 +8,7 @@ See [project-scope.md](project-scope.md) for what the system does.
 |---|---|
 | Runtime + package manager | Bun (workspaces) |
 | Backend | Express 5 + TypeScript (running on Bun) |
-| Frontend | React + TypeScript + Tailwind CSS + React Router (built with Vite) |
+| Frontend | React + TypeScript + Tailwind CSS + shadcn/ui + React Router (built with Vite) |
 | Database | PostgreSQL |
 | ORM + migrations | Prisma (Prisma Migrate) |
 | Authentication | Better Auth (email/password, database sessions via the Prisma adapter) |
@@ -27,6 +27,8 @@ See [project-scope.md](project-scope.md) for what the system does.
 ## Frontend
 - **React + TypeScript**, bundled with **Vite**.
 - **Tailwind CSS** for styling.
+- **shadcn/ui** for UI components (Base UI primitives, default Nova theme). Components are copied into
+  `client/src/components/ui/`, and colors come from the theme's CSS variables, so pages don't hard-code colors.
 - **React Router** for routing (login, ticket list, ticket detail, dashboard, user management).
 - Optional: **TanStack Query** for fetching and caching data from the API, and **TanStack Table** for the ticket list's
   filtering and sorting.

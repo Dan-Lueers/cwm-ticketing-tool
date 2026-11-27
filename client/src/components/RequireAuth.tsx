@@ -7,14 +7,14 @@ export function RequireAuth() {
   const { data: session, isPending } = authClient.useSession()
 
   if (isPending) {
-    return <p className="p-8 text-center text-gray-500">Loading…</p>
+    return <p className="p-8 text-center text-muted-foreground">Loading…</p>
   }
   if (!session) {
     return <Navigate to="/login" replace />
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
+    <div className="min-h-screen bg-muted">
       <NavBar user={session.user} />
       <main className="mx-auto max-w-5xl px-4 py-8">
         <Outlet />

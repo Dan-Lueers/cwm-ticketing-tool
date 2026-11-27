@@ -2,6 +2,10 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { Navigate, useNavigate } from 'react-router'
+import { Button } from '@/components/ui/button.tsx'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card.tsx'
+import { Input } from '@/components/ui/input.tsx'
+import { Label } from '@/components/ui/label.tsx'
 import { authClient } from '../lib/auth-client.ts'
 
 const loginSchema = z.object({
@@ -42,74 +46,60 @@ export function LoginPage() {
     }
   }
 
-  const inputClass =
-    'mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 aria-invalid:border-red-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100'
-  const fieldErrorClass = 'mt-1 text-sm text-red-600 dark:text-red-400'
-
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4 dark:bg-gray-950">
-      <div className="w-full max-w-sm rounded-lg border border-gray-200 bg-white p-8 shadow-sm dark:border-gray-800 dark:bg-gray-900">
-        <h1 className="mb-6 text-center text-2xl font-semibold text-gray-900 dark:text-gray-100">Sign in</h1>
+    <div className="flex min-h-screen items-center justify-center bg-muted px-4">
+      <Card className="w-full max-w-sm">
+        <CardHeader>
+          <CardTitle className="text-center text-2xl">Sign in</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <form noValidate onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+            {errors.root?.server && (
+              <div role="alert" className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
+                {errors.root.server.message}
+              </div>
+            )}
 
-        <form noValidate onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          {errors.root?.server && (
-            <div
-              role="alert"
-              className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700 dark:bg-red-950 dark:text-red-300"
-            >
-              {errors.root.server.message}
+            <div className="space-y-2">
+              <Label htmlFor="email">Email</Label>
+              <Input
+                id="email"
+                type="email"
+                autoComplete="email"
+                aria-invalid={!!errors.email}
+                aria-describedby={errors.email ? 'email-error' : undefined}
+                {...register('email')}
+              />
+              {errors.email && (
+                <p id="email-error" className="text-sm text-destructive">
+                  {errors.email.message}
+                </p>
+              )}
             </div>
-          )}
 
-          <div>
-            <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-              Email
-            </label>
-            <input
-              id="email"
-              type="email"
-              autoComplete="email"
-              aria-invalid={!!errors.email}
-              aria-describedby={errors.email ? 'email-error' : undefined}
-              {...register('email')}
-              className={inputClass}
-            />
-            {errors.email && (
-              <p id="email-error" className={fieldErrorClass}>
-                {errors.email.message}
-              </p>
-            )}
-          </div>
+            <div className="space-y-2">
+              <Label htmlFor="password">Password</Label>
+              <Input
+                id="password"
+                type="password"
+                autoComplete="current-password"
+                aria-invalid={!!errors.password}
+                aria-describedby={errors.password ? 'password-error' : undefined}
+                {...register('password')}
+              />
+              {errors.password && (
+                <p id="password-error" className="text-sm text-destructive">
+                  {errors.password.message}
+                </p>
+              )}
+            </div>
 
-          <div>
-            <label htmlFor="password" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-              Password
-            </label>
-            <input
-              id="password"
-              type="password"
-              autoComplete="current-password"
-              aria-invalid={!!errors.password}
-              aria-describedby={errors.password ? 'password-error' : undefined}
-              {...register('password')}
-              className={inputClass}
-            />
-            {errors.password && (
-              <p id="password-error" className={fieldErrorClass}>
-                {errors.password.message}
-              </p>
-            )}
-          </div>
-
-          <button
-            type="submit"
-            disabled={isSubmitting}
-            className="w-full rounded-md bg-blue-600 px-4 py-2 font-medium text-white hover:bg-blue-700 disabled:opacity-50"
-          >
-            {isSubmitting ? 'Signing in…' : 'Sign in'}
-          </button>
-        </form>
-      </div>
+            <Button type="submit" disabled={isSubmitting} className="w-full">
+              {isSubmitting ? 'Signing in…' : 'Sign in'}
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
     </div>
   )
 }

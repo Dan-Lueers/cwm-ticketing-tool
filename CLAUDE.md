@@ -29,6 +29,7 @@ TypeScript 7), so training data is often out of date.
 | React Hook Form 7 | `/react-hook-form/documentation` |
 | Hook Form resolvers (`zodResolver`) | `/react-hook-form/resolvers` |
 | Zod 4 | `/colinhacks/zod` |
+| shadcn/ui (Base UI, `base-nova` style) | `/shadcn-ui/ui` |
 
 Add libraries to this table as they're introduced (pg-boss, Anthropic SDK, ...).
 
@@ -86,4 +87,45 @@ server/   Express 5 + TypeScript, run directly by Bun (no build step)
   it for package binaries, so the scripts pass `--env-file=.env`.
 - **Dependencies are injected into `createApp()`** (e.g. `checkDatabase`) so route tests can run without a database.
   Tests that need the real database (like `src/db/prisma.test.ts`) use `DATABASE_URL`.
+- **UI components: shadcn/ui** (Base UI primitives, default Nova theme, config in `client/components.json`). Add
+  components with `cd client && bunx --bun shadcn@latest add <name>`; they land in `client/src/components/ui/`.
+  Client code can import via the `@/` alias (`@/components/ui/button.tsx`).
+- **Styling: use the shadcn theme, not fixed colors.** Build UI from the components in `client/src/components/ui/`
+  and the theme tokens (`bg-background`, `bg-muted`, `text-muted-foreground`, `text-destructive`, `border`, ...),
+  never hard-coded palette classes like `bg-blue-600` or `text-gray-700`; those bypass the theme and dark mode. The
+  theme's CSS variables live in `client/src/index.css`.
 - TypeScript is strict on both sides. Imports use explicit `.ts`/`.tsx` extensions.
+
+## Authentication
+
+Better Auth with email/password, sessions stored in PostgreSQL. Design and reasons: tech-stack.md → Authentication.
+
+**Server**
+- Config: `server/src/auth/auth.ts` (`auth`, `Session` type). No `cookieCache` or `secondaryStorage`: every request
+  checks the database, so signing out takes effect immediately. Keep it that way.
+- Better Auth's handler serves everything under `/api/auth/*` and is mounted **before** `express.json()` (it reads the
+  raw body). Our own endpoints never go under `/api/auth` (e.g. the current user is `GET /api/me`).
+- Protect routes with `requireAuth(getSession)` from `server/src/auth/require-auth.ts`: 401 JSON without a session,
+  otherwise sets `req.user` / `req.session` (types in `server/src/types/express.d.ts`, inferred from the auth config).
+- `authHandler` and `getSession` are injected into `createApp()`, like `checkDatabase`; route tests can pass a fake
+  `getSession`. `server/src/auth/auth.test.ts` signs in for real against the database.
+- **No public sign-up** (`disableSignUp: true`). Users are created on the server with `ensureUser()` from
+  `server/src/db/seed.ts` (the seed, tests, later user management), never via `auth.api.signUpEmail`.
+- **Roles:** `admin` / `agent`, the Prisma enum `Role` in `user.role` (default `agent`). Use `Role.admin` /
+  `Role.agent` from `src/generated/prisma/enums.ts`, never string literals. The field has `input: false`, so only
+  server code can set it, never a request body.
+- **Auth tables are Prisma migrations too.** After changing the auth config (fields, plugins), run `bunx auth
+  generate`, keep `role Role` (it writes `role String`), then `bun run db:migrate --name <change>`. Never
+  `auth migrate`.
+- CSRF origin checks stay on. In development `trustedOrigins` contains the Vite origin (`http://localhost:5173`); in
+  production the client is same-origin.
+- Env vars in `server/.env` (see `.env.example`): `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`, and `ADMIN_EMAIL` /
+  `ADMIN_PASSWORD` for the seed.
+
+**Client**
+- Use the shared `authClient` from `client/src/lib/auth-client.ts` (no `baseURL`: same origin, default base path
+  `/api/auth`). `authClient.useSession()` for the session, `authClient.signIn.email()` / `authClient.signOut()`;
+  `SessionUser` is the user type.
+- Signed-in pages go inside the `<RequireAuth />` layout route in `client/src/App.tsx`, which redirects to `/login`
+  without a session and renders the nav bar. `/login` redirects to `/` when already signed in.
+- Hiding a page in the client is not security: admin-only API routes still need a server-side role check.
