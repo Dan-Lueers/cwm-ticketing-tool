@@ -128,4 +128,6 @@ Better Auth with email/password, sessions stored in PostgreSQL. Design and reaso
   `SessionUser` is the user type.
 - Signed-in pages go inside the `<RequireAuth />` layout route in `client/src/App.tsx`, which redirects to `/login`
   without a session and renders the nav bar. `/login` redirects to `/` when already signed in.
+- Admin-only pages go inside the `<RequireAdmin />` layout route (nested in `<RequireAuth />`), which sends
+  non-admins to `/`. Admin-only nav links check `user.role === 'admin'` in `NavBar.tsx`.
 - Hiding a page in the client is not security: admin-only API routes still need a server-side role check.

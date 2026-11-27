@@ -58,8 +58,8 @@ endpoint simulates incoming emails and outgoing emails are logged, so the whole 
 - [ ] 2.6b Integration test: deactivated user can't sign in (after 2.4b)
 - [x] 2.7 Client: login page, auth context (Better Auth React client's `useSession`, `client/src/lib/auth-client.ts`),
       sign-out button in the nav bar
-- [ ] 2.8 Client: protected routes redirect to login; admin-only routes hidden from agents
-      (redirect done via `RequireAuth` layout route; admin-only hiding still open)
+- [x] 2.8 Client: protected routes redirect to login; admin-only routes hidden from agents
+      (`RequireAuth` and nested `RequireAdmin` layout routes; nav link to `/users` only for admins)
 
 **Done when:** the seeded admin can log in, reload the page and stay logged in, and log out.
 
@@ -67,7 +67,7 @@ endpoint simulates incoming emails and outgoing emails are logged, so the whole 
 - [ ] 3.1 `GET /api/users`, `POST /api/users` (create agent), `PATCH /api/users/:id` (edit name, deactivate)
 - [ ] 3.2 Validation: unique email, password rules; admins can't deactivate themselves
 - [ ] 3.3 Integration tests, including agents getting 403
-- [ ] 3.4 Client: users page with list and "create agent" form
+- [ ] 3.4 Client: users page with list and "create agent" form (`/users` page exists, heading only)
 
 **Done when:** the admin creates an agent, and that agent can log in but can't see the users page.
 
